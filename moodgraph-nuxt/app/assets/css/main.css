@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom sage and lavender colors */
+.bg-sage-50 { background-color: #f8faf8; }
+.bg-sage-100 { background-color: #f0f4f0; }
+.bg-sage-200 { background-color: #d9e5d9; }
+.bg-sage-300 { background-color: #b8d0b8; }
+.bg-sage-400 { background-color: #8fb88f; }
+.bg-sage-500 { background-color: #6b9b6b; }
+.bg-sage-600 { background-color: #5a8a5a; }
+.bg-sage-700 { background-color: #4a7a4a; }
+.bg-sage-800 { background-color: #3a6a3a; }
+
+.bg-lavender-50 { background-color: #faf8ff; }
+.bg-lavender-100 { background-color: #f4f0ff; }
+.bg-lavender-200 { background-color: #e5d9ff; }
+.bg-lavender-300 { background-color: #d0b8ff; }
+.bg-lavender-400 { background-color: #b88fff; }
+.bg-lavender-500 { background-color: #9b6bff; }
+.bg-lavender-600 { background-color: #8a5aff; }
+
+.text-sage-600 { color: #5a8a5a; }
+.text-sage-700 { color: #4a7a4a; }
+.text-sage-800 { color: #3a6a3a; }
+.text-lavender-600 { color: #8a5aff; }
+
+.border-sage-100 { border-color: #f0f4f0; }
+.border-sage-200 { border-color: #d9e5d9; }
+.border-sage-300 { border-color: #b8d0b8; }
+
+.focus\:ring-sage-500:focus { 
+  --tw-ring-color: #6b9b6b; 
+  --tw-ring-opacity: 0.5;
+}
+
+/* Slider styling */
+input[type="range"] {
+  background: linear-gradient(to right, #6b9b6b 0%, #9b6bff 100%);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #6b9b6b;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Emotion analysis styles */
+.progress-bar {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.progress {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.loader-small {
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
