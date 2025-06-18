@@ -155,15 +155,17 @@
                 <span v-else>Guardando...</span>
               </button>
   
-              <!-- Botón Obtener Consejo (próximo paso) -->
+              <!-- Botón Obtener Consejo (ACTUALIZADO) -->
               <button
-                class="bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
-                disabled
+                @click="getAdvice"
+                :disabled="analyzedEmotions.length === 0 || isGeneratingAdvice"
+                class="bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg v-if="!isGeneratingAdvice" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
                 </svg>
-                <span>Obtener Consejo</span>
+                <span v-if="!isGeneratingAdvice">Obtener Consejo</span>
+                <span v-else>Generando consejo...</span>
               </button>
             </div>
           </div>
@@ -176,6 +178,27 @@
               </svg>
               ¡Entrada guardada exitosamente! Puedes seguir analizando más textos.
             </p>
+          </div>
+
+          <!-- NUEVA SECCIÓN: Mostrar consejo generado -->
+          <div v-if="hasAdvice || adviceError" class="mb-8">
+            <!-- Error del consejo -->
+            <div v-if="adviceError" class="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+              <p class="text-red-800 text-sm">{{ adviceError }}</p>
+            </div>
+
+            <!-- Consejo generado -->
+            <div v-if="hasAdvice" class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+              <h4 class="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
+                </svg>
+                Consejo personalizado
+              </h4>
+              <div class="text-blue-800 leading-relaxed whitespace-pre-line">
+                {{ advice }}
+              </div>
+            </div>
           </div>
   
           <!-- Botón Reset -->
@@ -214,6 +237,16 @@
     getEmotionEmoji, 
     resetAnalysis 
   } = useEmotionAnalysis()
+
+  // NUEVO: Composable para consejos
+  const { 
+    advice, 
+    isGenerating: isGeneratingAdvice, 
+    error: adviceError,
+    hasAdvice,
+    generateAdvice,
+    resetAdvice 
+  } = useAdvice()
   
   // Estado local
   const entryText = ref('')
@@ -223,6 +256,9 @@
   const isSaving = ref(false)
   const saveSuccess = ref(false)
   const modelType = ref('spanish-emotions-base')
+
+  // NUEVO: Variable para guardar el ID de la entrada
+  const savedEntryId = ref<string | null>(null)
   
   // Supabase client
   const supabase = useSupabaseClient()
@@ -237,7 +273,7 @@
     await analyzeText(entryText.value)
   }
   
-  // Guardar entrada en Supabase
+  // Guardar entrada en Supabase (MODIFICADO para capturar ID)
   const saveEntry = async () => {
     if (!user.value || !triggerText.value.trim() || analyzedEmotions.value.length < 3) {
       return
@@ -283,6 +319,9 @@
   
       console.log('✅ Entrada guardada:', data)
       
+      // NUEVO: Guardar el ID para usarlo en el consejo
+      savedEntryId.value = data.id
+      
       // Mostrar mensaje de éxito
       saveSuccess.value = true
       
@@ -298,15 +337,35 @@
       isSaving.value = false
     }
   }
+
+  // NUEVA: Función para obtener consejo
+  const getAdvice = async () => {
+    if (analyzedEmotions.value.length === 0) {
+      return
+    }
+
+    const entryData = {
+      emotions: analyzedEmotions.value.map(emotion => ({
+        ...emotion,
+        translated: translateEmotion(emotion.label)
+      })),
+      trigger: triggerText.value,
+      energyLevel: energyLevel.value
+    }
+    
+    await generateAdvice(entryData, profile.value, savedEntryId.value || undefined)
+  }
   
-  // Reset todo
+  // Reset todo (MODIFICADO para incluir advice)
   const resetAll = () => {
     entryText.value = ''
     triggerText.value = ''
     energyLevel.value = 5
     charCount.value = 0
     saveSuccess.value = false
+    savedEntryId.value = null
     resetAnalysis()
+    resetAdvice() // NUEVO
   }
   
   // Inicializar contador

@@ -57,3 +57,19 @@ export interface UserProfile {
     email: string
     password: string
   }
+
+  export interface AdviceRequest {
+    entryData: {
+      emotions: Array<{label: string, score: number, translated?: string}>
+      trigger: string
+      energyLevel: number
+    }
+    userProfile: UserProfile
+    entryId?: string
+  }
+  
+  export interface AdviceResponse {
+    success: boolean
+    advice: string
+    generated_at: string
+  }
