@@ -1,229 +1,337 @@
 <template>
-    <div class="max-w-2xl mx-auto">
-      <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-8">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-semibold text-sage-800">Nueva Entrada</h3>
-          <div v-if="modelInfo" class="text-xs text-sage-500 bg-sage-50 px-2 py-1 rounded">
-            IA: {{ modelInfo.name }}
-          </div>
-        </div>
-        
-        <div class="space-y-6">
-          <!-- Área de texto principal -->
+    <div class="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+      <!-- Header con info del usuario -->
+      <div class="max-w-4xl mx-auto mb-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6 flex justify-between items-center">
           <div>
-            <label class="block text-sm font-medium text-sage-700 mb-2">
-              ¿Cómo te sientes ahora mismo?
-            </label>
-            <textarea 
-              v-model="newEntry.content"
-              placeholder="Tómate tu tiempo para expresar tus pensamientos y sentimientos... Mientras más describas, mejor será el análisis de emociones."
-              rows="5"
-              class="w-full p-4 border border-sage-200 rounded-xl resize-none focus:ring-2 focus:ring-sage-500 focus:border-transparent transition-colors"
-              :class="{ 'border-red-300 focus:ring-red-500': analysisError }"
-            ></textarea>
-            
-            <!-- Contador de caracteres -->
-            <div class="flex justify-between items-center mt-2">
-              <span class="text-xs text-sage-500">
-                {{ newEntry.content.length }} caracteres
-              </span>
-              <span v-if="newEntry.content.length < 10" class="text-xs text-amber-600">
-                💡 Escribe más para un mejor análisis
+            <h1 class="text-2xl font-bold text-gray-800">Nueva Entrada</h1>
+            <p class="text-gray-600">Hola {{ profile?.name || 'Usuario' }} 👋</p>
+            <p class="text-sm text-gray-500">{{ userEmail }}</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="text-right">
+              <p class="text-sm text-gray-500">Modelo de IA</p>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                {{ modelType }}
               </span>
             </div>
+            <button
+              @click="logout"
+              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Contenido principal -->
+      <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+          
+          <!-- Pregunta principal -->
+          <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">¿Cómo te sientes ahora mismo?</h2>
             
-            <!-- Botones de análisis -->
-            <div class="mt-3 flex items-center justify-between">
-              <button 
-                @click="analyzeText(newEntry.content)"
-                class="px-4 py-2 bg-lavender-500 text-white rounded-lg hover:bg-lavender-600 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="isAnalyzing || newEntry.content.trim().length < 3"
+            <textarea
+              v-model="entryText"
+              @input="updateCharCount"
+              class="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              placeholder="Describe cómo te sientes, qué está pasando en tu día, tus emociones..."
+              maxlength="500"
+            ></textarea>
+            
+            <div class="flex justify-between items-center mt-2">
+              <p class="text-sm text-gray-500">{{ charCount }} caracteres</p>
+              
+              <!-- Botón Analizar -->
+              <button
+                @click="analyzeEmotions"
+                :disabled="!entryText.trim() || isAnalyzing || charCount < 3"
+                class="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Icon name="lucide:brain" class="w-4 h-4" v-if="!isAnalyzing" />
-                <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
+                </svg>
                 <span v-if="!isAnalyzing">Analizar emociones con IA</span>
                 <span v-else>Analizando...</span>
               </button>
-              
-              <button 
-                v-if="analyzedEmotions.length > 0"
-                @click="resetAnalysis"
-                class="px-3 py-2 text-sage-600 hover:text-sage-800 transition-colors"
-                title="Limpiar análisis"
-              >
-                <Icon name="lucide:x" class="w-4 h-4" />
-              </button>
-            </div>
-            
-            <!-- Error de análisis -->
-            <div v-if="analysisError" class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p class="text-red-600 text-sm flex items-start">
-                <Icon name="lucide:alert-circle" class="w-4 h-4 mt-0.5 mr-2 flex-shrink-0" />
-                {{ analysisError }}
-              </p>
             </div>
           </div>
-          
-          <!-- Resultados del análisis de emociones -->
-          <div v-if="analyzedEmotions.length > 0" class="bg-gradient-to-r from-sage-50 to-lavender-50 rounded-xl p-5 border border-sage-200">
-            <h4 class="text-sm font-medium text-sage-800 mb-4 flex items-center">
-              <Icon name="lucide:sparkles" class="w-4 h-4 mr-2" />
-              Emociones detectadas por tu modelo fine-tuneado
-            </h4>
-            
-            <div class="space-y-4">
-              <div v-for="(emotion, index) in analyzedEmotions" :key="emotion.label" 
-                   class="emotion-result"
-                   :class="{ 'opacity-90': index > 0 }"
+  
+          <!-- Error de análisis -->
+          <div v-if="analysisError" class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+            <p class="text-red-800 text-sm">{{ analysisError }}</p>
+          </div>
+  
+          <!-- Resultados del análisis -->
+          <div v-if="analyzedEmotions.length > 0" class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
+                </svg>
+                Emociones detectadas
+              </h3>
+              
+              <div v-if="modelInfo" class="text-sm text-gray-500">
+                <span>Modelo: {{ modelInfo.name }}</span>
+                <span class="mx-2">•</span>
+                <span>{{ modelInfo.total_emotions_detected }} emociones analizadas</span>
+              </div>
+            </div>
+  
+            <!-- Lista de emociones -->
+            <div class="space-y-3 mb-6">
+              <div 
+                v-for="(emotion, index) in analyzedEmotions" 
+                :key="index"
+                class="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
               >
-                <div class="flex justify-between items-center mb-2">
-                  <span class="font-medium text-sage-700 flex items-center">
-                    <span class="text-lg mr-2">{{ getEmotionEmoji(emotion.label) }}</span>
-                    {{ translateEmotion(emotion.label) }}
-                  </span>
-                  <span class="text-sage-700 font-semibold">{{ Math.round(emotion.score * 100) }}%</span>
+                <div class="flex items-center space-x-3">
+                  <span class="text-2xl">{{ getEmotionEmoji(emotion.label) }}</span>
+                  <span class="font-medium text-gray-800">{{ translateEmotion(emotion.label) }}</span>
                 </div>
-                <div class="progress-bar">
-                  <div 
-                    class="progress transition-all duration-500 ease-out" 
-                    :style="`width: ${Math.round(emotion.score * 100)}%; background-color: ${getEmotionColor(emotion.label)}`"
-                  ></div>
+                
+                <div class="flex items-center space-x-3">
+                  <div class="w-24 bg-gray-200 rounded-full h-2">
+                    <div 
+                      class="h-2 rounded-full transition-all duration-500"
+                      :style="{ 
+                        width: `${Math.round(emotion.score * 100)}%`,
+                        backgroundColor: getEmotionColor(emotion.label)
+                      }"
+                    ></div>
+                  </div>
+                  <span class="text-sm font-medium text-gray-600 w-8">{{ Math.round(emotion.score * 100) }}%</span>
                 </div>
               </div>
             </div>
-            
-            <div class="mt-4 pt-3 border-t border-sage-200 flex justify-between items-center text-xs text-sage-500">
-              <span>Modelo: {{ modelInfo?.name || 'Fine-tuned Spanish Emotions' }}</span>
-              <span>{{ modelInfo?.total_emotions_detected || analyzedEmotions.length }} emociones analizadas</span>
+  
+            <!-- Trigger y contexto -->
+            <div class="mb-6">
+              <h4 class="text-md font-semibold text-gray-800 mb-3">¿Qué desencadenó estos sentimientos?</h4>
+              <textarea
+                v-model="triggerText"
+                class="w-full h-20 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                placeholder="Ej: Estrés laboral, tiempo en familia, ejercicio, conversación..."
+                maxlength="200"
+              ></textarea>
+            </div>
+  
+            <!-- Nivel de intensidad -->
+            <div class="mb-8">
+              <h4 class="text-md font-semibold text-gray-800 mb-3">Nivel de Energía (1-10)</h4>
+              <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-500">Bajo</span>
+                <div class="flex-1">
+                  <input
+                    v-model.number="energyLevel"
+                    type="range"
+                    min="1"
+                    max="10"
+                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+                <span class="text-sm text-gray-500">Alto</span>
+                <div class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-semibold min-w-[2rem] text-center">
+                  {{ energyLevel }}
+                </div>
+              </div>
+            </div>
+  
+            <!-- Botones de acción -->
+            <div class="flex space-x-4">
+              <!-- Botón Guardar Entrada -->
+              <button
+                @click="saveEntry"
+                :disabled="!triggerText.trim() || isSaving"
+                class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                <svg v-if="!isSaving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <span v-if="!isSaving">Guardar Entrada</span>
+                <span v-else>Guardando...</span>
+              </button>
+  
+              <!-- Botón Obtener Consejo (próximo paso) -->
+              <button
+                class="bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2"
+                disabled
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
+                </svg>
+                <span>Obtener Consejo</span>
+              </button>
             </div>
           </div>
   
-          <!-- Otros campos del formulario -->
-          <div>
-            <label class="block text-sm font-medium text-sage-700 mb-2">
-              ¿Qué desencadenó estos sentimientos?
-            </label>
-            <input 
-              v-model="newEntry.trigger"
-              placeholder="Ej: Estrés laboral, tiempo en familia, ejercicio, conversación..."
-              class="w-full p-4 border border-sage-200 rounded-xl focus:ring-2 focus:ring-sage-500 focus:border-transparent"
-            />
+          <!-- Mensaje de éxito -->
+          <div v-if="saveSuccess" class="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+            <p class="text-green-800 text-sm flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              ¡Entrada guardada exitosamente! Puedes seguir analizando más textos.
+            </p>
           </div>
   
-          <div>
-            <label class="block text-sm font-medium text-sage-700 mb-2">
-              Nivel de Energía (1-10)
-            </label>
-            <div class="flex items-center space-x-4">
-              <span class="text-sm text-sage-600">Bajo</span>
-              <input 
-                v-model="newEntry.energy"
-                type="range" 
-                min="1" 
-                max="10" 
-                class="flex-1 h-2 bg-sage-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <span class="text-sm text-sage-600">Alto</span>
-              <span class="text-lg font-semibold text-sage-800 w-8 text-center">{{ newEntry.energy }}</span>
-            </div>
-          </div>
-  
-          <!-- Botones de acción -->
-          <div class="flex space-x-4 pt-4">
-            <button 
-              @click="saveEntry"
-              class="flex-1 py-3 bg-gradient-to-r from-sage-500 to-lavender-500 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!newEntry.content.trim()"
+          <!-- Botón Reset -->
+          <div v-if="analyzedEmotions.length > 0" class="text-center">
+            <button
+              @click="resetAll"
+              class="text-gray-500 hover:text-gray-700 text-sm font-medium"
             >
-              <Icon name="lucide:save" class="w-5 h-5 inline mr-2" />
-              Guardar Entrada
+              Analizar nuevo texto
             </button>
-            <NuxtLink 
-              to="/"
-              class="px-6 py-3 border border-sage-300 text-sage-700 rounded-xl hover:bg-sage-50 transition-colors text-center flex items-center"
-            >
-              <Icon name="lucide:arrow-left" class="w-4 h-4 mr-2" />
-              Cancelar
-            </NuxtLink>
           </div>
+  
         </div>
       </div>
     </div>
   </template>
   
-  <script setup>
+  <script setup lang="ts">
+  import type { CreateMoodEntry, EmotionData } from '~/types'
+  
+  // Proteger página con middleware de autenticación
+  definePageMeta({
+    middleware: 'auth'
+  })
+  
+  // Composables
+  const { user, profile, userEmail, logout } = useAuth()
   const { 
     analyzedEmotions, 
     isAnalyzing, 
-    analysisError,
-    modelInfo,
+    analysisError, 
+    modelInfo, 
     analyzeText, 
     translateEmotion, 
-    getEmotionColor,
-    getEmotionEmoji,
+    getEmotionColor, 
+    getEmotionEmoji, 
     resetAnalysis 
   } = useEmotionAnalysis()
   
-  const newEntry = ref({
-    content: '',
-    trigger: '',
-    energy: 5
-  })
+  // Estado local
+  const entryText = ref('')
+  const charCount = ref(0)
+  const triggerText = ref('')
+  const energyLevel = ref(5)
+  const isSaving = ref(false)
+  const saveSuccess = ref(false)
+  const modelType = ref('spanish-emotions-base')
   
-  const saveEntry = () => {
-    if (newEntry.value.content.trim()) {
-      const entryData = { 
-        ...newEntry.value, 
-        emotions: analyzedEmotions.value,
-        modelInfo: modelInfo.value,
-        timestamp: new Date().toISOString()
+  // Supabase client
+  const supabase = useSupabaseClient()
+  
+  // Actualizar contador de caracteres
+  const updateCharCount = () => {
+    charCount.value = entryText.value.length
+  }
+  
+  // Analizar emociones
+  const analyzeEmotions = async () => {
+    await analyzeText(entryText.value)
+  }
+  
+  // Guardar entrada en Supabase
+  const saveEntry = async () => {
+    if (!user.value || !triggerText.value.trim() || analyzedEmotions.value.length < 3) {
+      return
+    }
+  
+    isSaving.value = true
+    saveSuccess.value = false
+  
+    try {
+      // Preparar datos de la entrada
+      const entryData: CreateMoodEntry = {
+        trigger: triggerText.value.trim(),
+        level: energyLevel.value,
+        emocion1: {
+          label: analyzedEmotions.value[0].label,
+          score: analyzedEmotions.value[0].score,
+          translated: translateEmotion(analyzedEmotions.value[0].label)
+        },
+        emocion2: {
+          label: analyzedEmotions.value[1].label,
+          score: analyzedEmotions.value[1].score,
+          translated: translateEmotion(analyzedEmotions.value[1].label)
+        },
+        emocion3: {
+          label: analyzedEmotions.value[2].label,
+          score: analyzedEmotions.value[2].score,
+          translated: translateEmotion(analyzedEmotions.value[2].label)
+        },
+        model_info: modelInfo.value
       }
+  
+      // Guardar en Supabase
+      const { data, error } = await supabase
+        .from('mood_entries')
+        .insert({
+          user_id: user.value.id,
+          ...entryData
+        })
+        .select()
+        .single()
+  
+      if (error) throw error
+  
+      console.log('✅ Entrada guardada:', data)
       
-      console.log('💾 Guardando entrada con emociones:', entryData)
+      // Mostrar mensaje de éxito
+      saveSuccess.value = true
       
-      // TODO: Aquí conectarás con Supabase después
-      
-      // Reset form
-      newEntry.value = { content: '', trigger: '', energy: 5 }
-      resetAnalysis()
-      
-      // Redirigir al dashboard
-      navigateTo('/')
+      // Auto-hide después de 3 segundos
+      setTimeout(() => {
+        saveSuccess.value = false
+      }, 3000)
+  
+    } catch (error: any) {
+      console.error('❌ Error guardando entrada:', error)
+      // TODO: Mostrar error al usuario
+    } finally {
+      isSaving.value = false
     }
   }
   
-  // Auto-analizar cuando el usuario para de escribir (opcional)
-  const debouncedAnalyze = useDebounceFn(() => {
-    if (newEntry.value.content.trim().length > 20) {
-      analyzeText(newEntry.value.content)
-    }
-  }, 3000) // 3 segundos después de parar de escribir
+  // Reset todo
+  const resetAll = () => {
+    entryText.value = ''
+    triggerText.value = ''
+    energyLevel.value = 5
+    charCount.value = 0
+    saveSuccess.value = false
+    resetAnalysis()
+  }
   
-  // watch(
-  //   () => newEntry.value.content,
-  //   () => {
-  //     if (newEntry.value.content.trim().length > 20) {
-  //       debouncedAnalyze()
-  //     }
-  //   }
-  // )
+  // Inicializar contador
+  onMounted(() => {
+    updateCharCount()
+  })
   </script>
   
   <style scoped>
-  .progress-bar {
-    height: 8px;
-    background-color: #e5e7eb;
-    border-radius: 4px;
-    overflow: hidden;
+  /* Estilos para el slider */
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #7c3aed;
+    cursor: pointer;
   }
   
-  .progress {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.5s ease-out;
-  }
-  
-  .emotion-result {
-    transition: opacity 0.3s ease;
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #7c3aed;
+    cursor: pointer;
+    border: none;
   }
   </style>

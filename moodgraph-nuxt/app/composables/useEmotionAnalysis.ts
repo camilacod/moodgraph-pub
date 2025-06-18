@@ -1,10 +1,11 @@
+// app/composables/useEmotionAnalysis.ts - VERSIÓN HÍBRIDA
 export const useEmotionAnalysis = () => {
     const analyzedEmotions = ref<Array<{label: string, score: number}>>([])
     const isAnalyzing = ref(false)
     const analysisError = ref('')
     const modelInfo = ref<any>(null)
   
-    //  API local
+    // URL de tu API local
     const API_BASE_URL = 'http://localhost:8000'
   
     const analyzeText = async (text: string) => {
@@ -22,9 +23,9 @@ export const useEmotionAnalysis = () => {
       analysisError.value = ''
       
       try {
-        console.log('🔄 Enviando texto a tu modelo fine-tuneado:', text.substring(0, 50))
+        console.log('🔄 Enviando texto al modelo:', text.substring(0, 50))
         
-        // API FastAPI
+        // Llamar a tu API FastAPI híbrida
         const response = await $fetch(`${API_BASE_URL}/predict`, {
           method: 'POST',
           headers: {
@@ -35,8 +36,9 @@ export const useEmotionAnalysis = () => {
           }
         })
         
-        console.log('✅ Respuesta del modelo fine-tuneado:', response)
+        console.log('✅ Respuesta del modelo:', response)
         
+        // La nueva API híbrida siempre devuelve este formato
         if (response.success && response.emotions) {
           analyzedEmotions.value = response.emotions
           modelInfo.value = response.model_info
@@ -68,15 +70,16 @@ export const useEmotionAnalysis = () => {
   
     const translateEmotion = (label: string): string => {
       const translations: Record<string, string> = {
-        // Emociones de tu modelo fine-tuneado (las 6 básicas)
+        // Emociones básicas (ambos modelos)
         "joy": "Alegría",
         "sadness": "Tristeza", 
         "anger": "Enojo",
         "fear": "Miedo",
         "surprise": "Sorpresa",
         "disgust": "Disgusto",
+        
+        // Fallbacks (se filtran automáticamente en la API)
         "others": "Otras",
-        // Fallbacks
         "other": "Otra",
         "error": "Error",
         "unknown": "Desconocida"
@@ -86,14 +89,18 @@ export const useEmotionAnalysis = () => {
   
     const getEmotionColor = (label: string): string => {
       const colors: Record<string, string> = {
-        // Colores específicos para cada emoción (mismos que en tu HTML)
+        // Emociones básicas
         "joy": "#27ae60",       // Verde alegre
         "sadness": "#3498db",   // Azul tristeza
         "anger": "#e74c3c",     // Rojo enojo
         "fear": "#8e44ad",      // Morado miedo
         "surprise": "#f39c12",  // Naranja sorpresa
-        "disgust": "#7f8c8d",
-        "others": "#95a5a6" ,  // Gris disgusto
+        "disgust": "#7f8c8d",   // Gris disgusto
+        
+
+        // Fallbacks (raramente se muestran gracias al filtro en API)
+        "others": "#95a5a6",
+        "other": "#95a5a6",
         "error": "#e74c3c",
         "unknown": "#95a5a6"
       }
@@ -102,13 +109,16 @@ export const useEmotionAnalysis = () => {
   
     const getEmotionEmoji = (label: string): string => {
       const emojis: Record<string, string> = {
+        // Emociones básicas
         "joy": "😊",
         "sadness": "😢",
         "anger": "😠",
         "fear": "😨",
         "surprise": "😮",
         "disgust": "🤢",
+        // Fallbacks
         "others": "😐",
+        "other": "😐",
         "error": "⚠️",
         "unknown": "❓"
       }
@@ -131,6 +141,16 @@ export const useEmotionAnalysis = () => {
       }
     }
   
+    // Obtener información del modelo actual
+    const getModelInfo = async () => {
+      try {
+        const info = await $fetch(`${API_BASE_URL}/model-info`)
+        return info
+      } catch {
+        return null
+      }
+    }
+  
     return {
       // Estados reactivos (readonly para evitar mutaciones externas)
       analyzedEmotions: readonly(analyzedEmotions),
@@ -144,6 +164,7 @@ export const useEmotionAnalysis = () => {
       getEmotionColor,
       getEmotionEmoji,
       resetAnalysis,
-      checkApiHealth
+      checkApiHealth,
+      getModelInfo
     }
   }
