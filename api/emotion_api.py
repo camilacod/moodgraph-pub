@@ -254,9 +254,10 @@ def switch_model_endpoint(model_type: str):
 
 if __name__ == "__main__":
     import uvicorn
+    import os
     print("🌟 Iniciando servidor FastAPI híbrido...")
     print(f"🎯 Modelo activo: {model_type}")
     print(f"🔧 USE_FINETUNED: {USE_FINETUNED}")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
-
-app = app 
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+    
