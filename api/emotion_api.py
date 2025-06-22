@@ -258,3 +258,5 @@ if __name__ == "__main__":
     print(f"🎯 Modelo activo: {model_type}")
     print(f"🔧 USE_FINETUNED: {USE_FINETUNED}")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+
+app = app 
