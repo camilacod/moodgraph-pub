@@ -73,3 +73,34 @@ export interface UserProfile {
     advice: string
     generated_at: string
   }
+
+  export interface TherapeuticTechnique {
+    id: string
+  category: string
+  subcategory?: string
+  name: string
+  description: string
+  instructions: string
+  evidence_level: 'high' | 'medium' | 'low'
+  target_emotions: string[]
+  duration_minutes: number
+  difficulty_level: number
+  source: string
+  tags: string[]
+  created_at: string
+  updated_at: string
+  recommendationScore?: number
+  }
+
+  export interface TechniqueFeedback {
+    id: string
+    user_id: string
+    technique_id: string
+    mood_entry_id?: string
+    rating: number
+    was_helpful: boolean
+    comments?: string
+    tried_at: string
+    feedback_at: string
+    technique_category?: string
+  }

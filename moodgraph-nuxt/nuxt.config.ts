@@ -20,9 +20,15 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Variables privadas (servidor)
     openaiApiKey: process.env.OPENAI_API_KEY,
+    supabaseKey: process.env.SUPABASE_KEY,
+
+    
     
     // Variables públicas (cliente)
     public: {
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY
+
     }
   }
 })
