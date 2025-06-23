@@ -35,6 +35,8 @@ steps:
       - '--allow-unauthenticated'
       - '--timeout'
       - '300s'
+      - '--clear-env-vars'
+      - '--clear-secrets'
       - '--set-env-vars'
       - 'USE_FINETUNED=false,FINETUNED_MODEL_PATH=emotion_model/,API_PORT=8080'
 
