@@ -14,7 +14,19 @@ steps:
       - 'push'
       - 'gcr.io/$PROJECT_ID/moodcoach:$COMMIT_SHA'
 
-  # Deploy container image to Cloud Run
+  # Delete existing service to start fresh
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'delete'
+      - 'moodcoach'
+      - '--region'
+      - 'us-central1'
+      - '--quiet'
+    id: 'delete-service'
+
+  # Deploy container image to Cloud Run (fresh service)
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       - 'run'
@@ -35,10 +47,9 @@ steps:
       - '--allow-unauthenticated'
       - '--timeout'
       - '300s'
-      - '--clear-env-vars'
-      - '--clear-secrets'
       - '--set-env-vars'
       - 'USE_FINETUNED=false,FINETUNED_MODEL_PATH=emotion_model/,API_PORT=8080'
+    id: 'deploy-service'
 
 options:
   logging: CLOUD_LOGGING_ONLY
