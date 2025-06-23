@@ -6,7 +6,7 @@ export const useEmotionAnalysis = () => {
     const modelInfo = ref<any>(null)
   
     // URL de tu API local
-    const API_BASE_URL = 'http://localhost:8000'
+    const API_BASE_URL = 'http://localhost:8000' //todo: cambiar a la url de la api
   
     const analyzeText = async (text: string) => {
       if (!text.trim()) {

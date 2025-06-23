@@ -35,6 +35,12 @@ steps:
       - '--allow-unauthenticated'
       - '--timeout'
       - '300s'
+      - '--set-env-vars'
+      - 'USE_FINETUNED=false,FINETUNED_MODEL_PATH=emotion_model/,API_PORT=8080'
+      - '--set-env-vars'
+      - 'MODEL_NAME=j-hartmann/emotion-english-distilroberta-base'
+      - '--set-secrets'
+      - 'HUGGINGFACE_TOKEN=huggingface-token:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
