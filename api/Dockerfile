@@ -22,3 +22,5 @@ EXPOSE 8080
 
 # Comando para correr la app
 CMD ["uvicorn", "emotion_api:app", "--host", "0.0.0.0", "--port", "8080"]
+
+#letsee
