@@ -11,8 +11,8 @@ export const useEmotionAnalysis = () => {
   // Configuración de API URL - funciona en desarrollo y producción
   const config = useRuntimeConfig()
   //cambio a local
-  const API_BASE_URL = "http://localhost:8080"
-  //const API_BASE_URL = config.public.apiUrl || "https://moodcoach-909367829494.us-central1.run.app"
+  // const API_BASE_URL = "http://localhost:8080"
+  const API_BASE_URL = config.public.apiUrl || "https://moodcoach-909367829494.us-central1.run.app"
   
   // Debug temporal - remover después
   console.log('🔗 API_BASE_URL:', API_BASE_URL)
