@@ -21,6 +21,7 @@ export interface UserProfile {
     user_id: string
     timestamp_date: string
     trigger: string
+    trigger_type?: string
     level: number
     emocion1: EmotionData
     emocion2: EmotionData
@@ -37,6 +38,7 @@ export interface UserProfile {
   
   export interface CreateMoodEntry {
     trigger: string
+    trigger_type?: string
     level: number
     emocion1: EmotionData
     emocion2: EmotionData

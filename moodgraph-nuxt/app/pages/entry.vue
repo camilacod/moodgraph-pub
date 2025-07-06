@@ -1,37 +1,24 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
     <!-- Header con info del usuario -->
-    <div class="max-w-4xl mx-auto mb-6">
+    <div class="max-w-8xl mx-auto mb-6">
       <div class="bg-white rounded-2xl shadow-lg p-6 flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-bold text-gray-800">Nueva Entrada</h1>
           <p class="text-gray-600">Hola {{ profile?.name || 'Usuario' }} 👋</p>
           <p class="text-sm text-gray-500">{{ userEmail }}</p>
         </div>
-        <div class="flex items-center space-x-4">
-          <div class="text-right">
-            <p class="text-sm text-gray-500">Modelo de IA</p>
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-              {{ modelType }}
-            </span>
-          </div>
-          <button
-            @click="logout"
-            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            Cerrar Sesión
-          </button>
-        </div>
+       
       </div>
     </div>
 
     <!-- Contenido principal -->
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-8xl mx-auto">
       <div class="bg-white rounded-2xl shadow-lg p-8">
         
         <!-- Pregunta principal -->
         <div class="mb-8">
-          <h2 class="text-xl font-semibold text-gray-800 mb-4">¿Cómo te sientes ahora mismo?</h2>
+          <h2 class="text-xl font-semibold text-gray-800 mb-4">¿Cómo te sientes?</h2>
           
           <textarea
             v-model="entryText"
@@ -47,13 +34,13 @@
             <!-- Botón Analizar -->
             <button
               @click="analyzeEmotions"
-              :disabled="!entryText.trim() || isAnalyzing || charCount < 3"
+              :disabled="!entryText.trim() || isAnalyzing || charCount < 15"
               class="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
               </svg>
-              <span v-if="!isAnalyzing">Analizar emociones con IA</span>
+              <span v-if="!isAnalyzing">Analizar emociones</span>
               <span v-else>Analizando...</span>
             </button>
           </div>
@@ -108,15 +95,34 @@
             </div>
           </div>
 
-          <!-- Trigger y contexto -->
-          <div class="mb-6">
-            <h4 class="text-md font-semibold text-gray-800 mb-3">¿Qué desencadenó estos sentimientos?</h4>
-            <textarea
-              v-model="triggerText"
-              class="w-full h-20 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-              placeholder="Ej: Estrés laboral, tiempo en familia, ejercicio, conversación..."
-              maxlength="200"
-            ></textarea>
+          <!-- NUEVO: Trigger detectado automáticamente -->
+          <div v-if="detectedTrigger" class="mb-6">
+            <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
+              </svg>
+              Trigger Detectado 
+            </h4>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div class="flex items-center space-x-2 mb-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {{ triggerTypes[triggerType] }}
+                </span>
+              </div>
+              <p class="text-gray-800 font-medium">{{ detectedTrigger }}</p>
+            </div>
+          </div>
+
+          <!-- Indicador de análisis de trigger en progreso -->
+          <div v-if="isAnalyzingTrigger" class="mb-6">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center space-x-3">
+                <svg class="animate-spin w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span class="text-gray-700">Detectando trigger automáticamente...</span>
+              </div>
+            </div>
           </div>
 
           <!-- Nivel de intensidad -->
@@ -145,7 +151,7 @@
             <!-- Botón Guardar Entrada (solo este) -->
             <button
               @click="saveEntry"
-              :disabled="!triggerText.trim() || isSaving"
+              :disabled="!detectedTrigger || isSaving || isAnalyzingTrigger"
               class="bg-green-600 hover:bg-green-700 text-white py-3 px-8 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               <svg v-if="!isSaving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,13 +217,19 @@ const {
   translateEmotion, 
   getEmotionColor, 
   getEmotionEmoji, 
-  resetAnalysis 
+  resetAnalysis,
+  // NUEVO: Estados del análisis automático de triggers
+  detectedTrigger,
+  triggerType,
+  isAnalyzingTrigger
 } = useEmotionAnalysis()
+
+// NUEVO: Acceso a tipos de triggers para mostrar en UI
+const { triggerTypes } = useTriggerAnalysis()
 
 // Estado local
 const entryText = ref('')
 const charCount = ref(0)
-const triggerText = ref('')
 const energyLevel = ref(5)
 const isSaving = ref(false)
 const saveSuccess = ref(false)
@@ -243,7 +255,7 @@ const analyzeEmotions = async () => {
 
 // Guardar entrada en Supabase (ACTUALIZADO para auto-iniciar flujo)
 const saveEntry = async () => {
-  if (!user.value || !triggerText.value.trim() || analyzedEmotions.value.length < 3) {
+  if (!user.value || !detectedTrigger.value || analyzedEmotions.value.length < 3) {
     return
   }
 
@@ -253,7 +265,8 @@ const saveEntry = async () => {
   try {
     // Preparar datos de la entrada
     const entryData: CreateMoodEntry = {
-      trigger: triggerText.value.trim(),
+      trigger: detectedTrigger.value,
+      trigger_type: triggerType.value,
       level: energyLevel.value,
       emocion1: {
         label: analyzedEmotions.value[0].label,
@@ -372,7 +385,6 @@ const handleFeedbackSubmitted = async (data) => {
 // Reset todo (ACTUALIZADO)
 const resetAll = () => {
   entryText.value = ''
-  triggerText.value = ''
   energyLevel.value = 5
   charCount.value = 0
   saveSuccess.value = false
