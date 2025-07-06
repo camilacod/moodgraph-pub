@@ -5,6 +5,9 @@ export const useEmotionAnalysis = () => {
   const analysisError = ref('')
   const modelInfo = ref<any>(null)
 
+  // NUEVO: Integrar análisis automático de triggers
+  const { analyzeTrigger, detectedTrigger, triggerType, isAnalyzing: isAnalyzingTrigger, resetTriggerAnalysis } = useTriggerAnalysis()
+
   // Configuración de API URL - funciona en desarrollo y producción
   const config = useRuntimeConfig()
   //cambio a local
@@ -33,8 +36,15 @@ export const useEmotionAnalysis = () => {
       console.log('🔄 Enviando texto al modelo:', text.substring(0, 50))
       console.log('🌐 URL completa:', `${API_BASE_URL}/predict`)
       
+      // Define el tipo de respuesta esperada
+      type PredictionResponse = {
+        success: boolean
+        emotions: Array<{label: string, score: number}>
+        model_info: any
+      }
+      
       // Llamar a tu API FastAPI híbrida
-      const response = await $fetch(`${API_BASE_URL}/predict`, {
+      const response = await $fetch<PredictionResponse>(`${API_BASE_URL}/predict`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,6 +60,11 @@ export const useEmotionAnalysis = () => {
       if (response.success && response.emotions) {
         analyzedEmotions.value = response.emotions
         modelInfo.value = response.model_info
+        
+        // NUEVO: Analizar trigger automáticamente después de analizar emociones
+        console.log('🔍 Iniciando análisis automático de trigger...')
+        await analyzeTrigger(text)
+        console.log('✅ Análisis de trigger completado')
       } else {
         throw new Error('Respuesta inválida del modelo')
       }
@@ -71,6 +86,7 @@ export const useEmotionAnalysis = () => {
       // Limpiar resultados anteriores en caso de error
       analyzedEmotions.value = []
       modelInfo.value = null
+      resetTriggerAnalysis()
     } finally {
       isAnalyzing.value = false
     }
@@ -137,12 +153,18 @@ export const useEmotionAnalysis = () => {
     analyzedEmotions.value = []
     analysisError.value = ''
     modelInfo.value = null
+    resetTriggerAnalysis()
   }
 
   // Verificar si la API está disponible
   const checkApiHealth = async () => {
     try {
-      const health = await $fetch(`${API_BASE_URL}/health`)
+      // Define the expected response type
+      type HealthResponse = {
+        status: string
+      }
+      
+      const health = await $fetch<HealthResponse>(`${API_BASE_URL}/health`)
       return health.status === 'ok'
     } catch {
       return false
@@ -165,6 +187,11 @@ export const useEmotionAnalysis = () => {
     isAnalyzing: readonly(isAnalyzing),
     analysisError: readonly(analysisError),
     modelInfo: readonly(modelInfo),
+    
+    // NUEVO: Estados del análisis de triggers
+    detectedTrigger: readonly(detectedTrigger),
+    triggerType: readonly(triggerType),
+    isAnalyzingTrigger: readonly(isAnalyzingTrigger),
     
     // Métodos
     analyzeText,

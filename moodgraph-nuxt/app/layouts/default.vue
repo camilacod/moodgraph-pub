@@ -47,8 +47,11 @@
               <p class="text-sage-600 mt-1">{{ currentDate }}</p>
             </div>
             <div class="flex items-center space-x-4">
-              <button class="p-2 text-sage-600 hover:text-sage-800 hover:bg-sage-100 rounded-lg transition-colors">
-                <Icon name="lucide:bell" class="w-5 h-5" />
+              <button 
+                @click="logout" 
+                class="p-2 text-sage-600 hover:text-sage-800 hover:bg-sage-100 rounded-lg transition-colors flex items-center space-x-2"
+              >
+                <Icon name="lucide:log-out" class="w-5 h-5" />
               </button>
               <div class="w-8 h-8 bg-gradient-to-r from-sage-500 to-lavender-500 rounded-full"></div>
             </div>
@@ -66,6 +69,9 @@
   <script setup>
   const route = useRoute()
   const streak = ref(7)
+
+  // Importar la función de logout desde el composable useAuth
+  const { logout } = useAuth()
   
   const navItems = [
     { path: '/', label: 'Dashboard', icon: 'lucide:trending-up' },
