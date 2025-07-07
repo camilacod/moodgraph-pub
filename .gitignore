@@ -57,3 +57,5 @@ data/
 
 # Jupyter artifacts
 .ipynb_checkpoints/
+
+logo.html

@@ -1,9 +1,9 @@
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-800 to-blue-900 p-4">
       <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 w-full max-w-md border border-white/20 shadow-2xl">
         <!-- Header -->
         <div class="text-center mb-8">
-          <h1 class="text-3xl font-bold text-white mb-2">MoodGraph</h1>
+          <h1 class="text-3xl font-bold text-white mb-2">MoodCoach</h1>
           <p class="text-white/80">Inicia sesión para continuar</p>
         </div>
   
@@ -46,8 +46,7 @@
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full bg-white text-purple-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+            class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
             <span v-if="!isLoading">Iniciar Sesión</span>
             <span v-else class="flex items-center justify-center">
               <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">

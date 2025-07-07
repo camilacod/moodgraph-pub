@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
+  <div class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-4">
     <!-- Header con info del usuario -->
     <div class="max-w-8xl mx-auto mb-6">
       <div class="bg-white rounded-2xl shadow-lg p-6 flex justify-between items-center">
@@ -23,7 +23,7 @@
           <textarea
             v-model="entryText"
             @input="updateCharCount"
-            class="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+            class="w-full h-32 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
             placeholder="Describe cómo te sientes, qué está pasando en tu día, tus emociones..."
             maxlength="500"
           ></textarea>
@@ -35,7 +35,7 @@
             <button
               @click="analyzeEmotions"
               :disabled="!entryText.trim() || isAnalyzing || charCount < 15"
-              class="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
@@ -55,7 +55,7 @@
         <div v-if="analyzedEmotions.length > 0" class="mb-8">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-              <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.869-1.5z"></path>
               </svg>
               Emociones detectadas
@@ -117,7 +117,7 @@
           <div v-if="isAnalyzingTrigger" class="mb-6">
             <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
               <div class="flex items-center space-x-3">
-                <svg class="animate-spin w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="animate-spin w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
                 <span class="text-gray-700">Detectando trigger automáticamente...</span>
@@ -140,7 +140,7 @@
                 />
               </div>
               <span class="text-sm text-gray-500">Alto</span>
-              <div class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-semibold min-w-[2rem] text-center">
+              <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold min-w-[2rem] text-center">
                 {{ energyLevel }}
               </div>
             </div>

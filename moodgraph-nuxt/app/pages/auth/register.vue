@@ -3,7 +3,7 @@
     <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 w-full max-w-lg border border-white/20 shadow-2xl">
       <!-- Header -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-white mb-2">MoodGraph</h1>
+        <h1 class="text-3xl font-bold text-white mb-2">MoodCoach</h1>
         <p class="text-white/80">Crea tu cuenta para empezar</p>
       </div>
 
