@@ -20,72 +20,92 @@
       </div> -->
   
       <!-- Today's Insights -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">   
+        <!-- Emotions Chart -->
         <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
           <div class="flex items-center justify-between mb-4">
             <h4 class="font-semibold text-sage-800">Emociones de Hoy</h4>
             <Icon name="lucide:smile" class="w-5 h-5 text-rose-500" />
           </div>
-          <div class="space-y-3">
-            <div v-if="isLoading" class="animate-pulse space-y-3">
-              <div v-for="i in 3" :key="i" class="flex items-center justify-between">
-                <div class="h-4 bg-sage-200 rounded w-20"></div>
-                <div class="flex items-center space-x-2">
-                  <div class="w-16 bg-sage-200 rounded-full h-2"></div>
-                  <div class="h-4 bg-sage-200 rounded w-8"></div>
-                </div>
+          
+          <div v-if="isLoading" class="animate-pulse">
+            <div class="flex items-end justify-center space-x-4 h-32">
+              <div v-for="i in 3" :key="i" class="flex flex-col items-center space-y-2">
+                <div class="h-4 bg-sage-200 rounded w-8"></div>
+                <div class="w-12 bg-sage-200 rounded-full h-20"></div>
+                <div class="h-3 bg-sage-200 rounded w-12"></div>
               </div>
             </div>
-            <div v-else-if="todayEmotions.length === 0" class="text-center text-sage-500 py-4">
-              <p class="text-sm">No hay registros de hoy</p>
-              <p class="text-xs mt-1">¡Registra tu primera entrada!</p>
-            </div>
-            <div v-else v-for="emotion in todayEmotions" :key="emotion.name" class="flex items-center justify-between">
-              <span class="text-sage-700">{{ emotion.name }}</span>
-              <div class="flex items-center space-x-2">
-                <div class="w-16 bg-sage-100 rounded-full h-2">
-                  <div 
-                    :class="`h-2 rounded-full ${emotion.color}`"
-                    :style="`width: ${emotion.intensity}%`"
-                  ></div>
-                </div>
-                <span class="text-sm text-sage-600">{{ emotion.intensity }}%</span>
+          </div>
+          
+          <div v-else-if="todayEmotions.length === 0" class="text-center text-sage-500 py-12">
+            <p class="text-sm">No hay registros de hoy</p>
+            <p class="text-xs mt-1">¡Registra tu primera entrada!</p>
+          </div>
+          
+          <div v-else class="flex items-end justify-center space-x-4 h-32">
+            <div v-for="emotion in todayEmotions" :key="emotion.name" class="flex flex-col items-center space-y-2">
+              <!-- Percentage Label -->
+              <div class="text-xs font-semibold text-sage-700 min-h-[16px]">
+                {{ emotion.intensity }}%
+              </div>
+              
+              <!-- Vertical Pill Bar -->
+              <div class="relative w-8 h-20 bg-sage-100 rounded-full overflow-hidden">
+                <div 
+                  :class="`absolute bottom-0 left-0 right-0 rounded-full transition-all duration-700 ease-out ${emotion.color}`"
+                  :style="`height: ${emotion.intensity}%`"
+                ></div>
+              </div>
+              
+              <!-- Emotion Name -->
+              <div class="text-xs text-sage-600 text-center max-w-[3rem] leading-tight">
+                {{ emotion.name }}
               </div>
             </div>
           </div>
         </div>
-  
-        <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-semibold text-sage-800">Tendencia en tu Ánimo</h4>
-            <Icon :name="trendIcon" :class="`w-5 h-5 ${trendIconColor}`" />
+
+        <!-- Mood Trend & Weekly Stats Side by Side -->
+        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Mood Trend -->
+          <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-semibold text-sage-800">Tendencia en tu Ánimo</h4>
+              <Icon :name="trendIcon" :class="`w-5 h-5 ${trendIconColor}`" />
+            </div>
+            
+            <div v-if="isLoading" class="animate-pulse space-y-3 text-center">
+              <div class="h-8 bg-sage-200 rounded w-16 mx-auto"></div>
+              <div class="h-4 bg-sage-200 rounded w-24 mx-auto"></div>
+              <div class="h-4 bg-sage-200 rounded w-32 mx-auto"></div>
+            </div>
+            
+            <div v-else-if="!moodTrend.currentLevel" class="text-center py-4">
+              <div class="text-sage-600 mb-1">Sin datos suficientes</div>
+              <p class="text-xs mt-1">Registra más entradas para ver tendencias</p>
+            </div>
+            
+            <div v-else class="text-center py-4">
+              <div :class="`text-3xl font-bold ${trendTextColor} mb-2`">{{ moodTrend.currentLevel.toFixed(1) }}</div>
+              <p class="text-sage-600 text-sm">{{ moodTrend.difference > 0 ? '+' : '' }}{{ moodTrend.difference.toFixed(1) }} desde ayer</p>
+              <p :class="`text-xs mt-1 ${trendTextColor}`">{{ trendMessage }}</p>
+            </div>
           </div>
-          <div v-if="isLoading" class="animate-pulse space-y-3 text-center">
-            <div class="h-8 bg-sage-200 rounded w-16 mx-auto"></div>
-            <div class="h-4 bg-sage-200 rounded w-24 mx-auto"></div>
-            <div class="h-4 bg-sage-200 rounded w-32 mx-auto"></div>
-          </div>
-          <div v-else-if="!moodTrend.currentLevel" class="text-center py-2">
-            <div class="text-sage-600 mb-1">Sin datos suficientes</div>
-            <p class="text-xs mt-1">Registra más entradas para ver tendencias</p>
-          </div>
-          <div v-else class="text-center">
-            <div :class="`text-3xl font-bold ${trendTextColor} mb-2`">{{ moodTrend.currentLevel.toFixed(1) }}</div>
-            <p class="text-sage-600 text-sm">{{ moodTrend.difference > 0 ? '+' : '' }}{{ moodTrend.difference.toFixed(1) }} desde ayer</p>
-            <p :class="`text-xs mt-1 ${trendTextColor}`">{{ trendMessage }}</p>
-          </div>
-        </div>
-  
-        <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-semibold text-sage-800">Entradas Esta Semana</h4>
-            <Icon name="lucide:calendar" class="w-5 h-5 text-lavender-500" />
-          </div>
-          <div class="text-center">
-            <div class="text-3xl font-bold text-lavender-600 mb-2">{{ weeklyStats.total }}</div>
-            <p class="text-sage-600 text-sm">{{ weeklyStats.today }} entradas hoy</p>
-            <p class="text-lavender-600 text-xs mt-1" v-if="weeklyStats.total > 0">¡Excelente consistencia!</p>
-            <p class="text-sage-500 text-xs mt-1" v-else>Registra tu primera entrada</p>
+
+          <!-- Weekly Stats -->
+          <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-semibold text-sage-800">Entradas Esta Semana</h4>
+              <Icon name="lucide:calendar" class="w-5 h-5 text-lavender-500" />
+            </div>
+            
+            <div class="text-center py-4">
+              <div class="text-3xl font-bold text-lavender-600 mb-2">{{ weeklyStats.total }}</div>
+              <p class="text-sage-600 text-sm">{{ weeklyStats.today }} entradas hoy</p>
+              <p class="text-lavender-600 text-xs mt-1" v-if="weeklyStats.total > 0">¡Excelente consistencia!</p>
+              <p class="text-sage-500 text-xs mt-1" v-else>Registra tu primera entrada</p>
+            </div>
           </div>
         </div>
       </div>
@@ -159,26 +179,58 @@
       'disgust': 'bg-yellow-400'
     }
     
+    // Initialize all emotions with 0 values
+    const allEmotions = ['joy', 'sadness', 'anger', 'fear', 'surprise', 'disgust']
+    allEmotions.forEach(emotion => {
+      emotionCounts[emotion] = { count: 0, total: 0 }
+    })
+    
     todayEntries.forEach(entry => {
       [entry.emocion1, entry.emocion2, entry.emocion3].forEach(emotion => {
         if (emotion?.label && emotion.label !== 'other') {
           const key = emotion.label.toLowerCase()
-          if (!emotionCounts[key]) {
-            emotionCounts[key] = { count: 0, total: 0 }
+          if (emotionCounts[key]) {
+            emotionCounts[key].count++
+            emotionCounts[key].total += emotion.score || 0
           }
-          emotionCounts[key].count++
-          emotionCounts[key].total += emotion.score || 0
         }
       })
     })
     
-    return Object.entries(emotionCounts).map(([emotion, data]) => ({
+    return allEmotions.map(emotion => ({
       name: getEmotionTranslation(emotion),
-      intensity: Math.round((data.total / data.count) * 100),
+      intensity: emotionCounts[emotion].count > 0 ? Math.round((emotionCounts[emotion].total / emotionCounts[emotion].count) * 100) : 0,
       color: emotionColors[emotion] || 'bg-gray-400'
-    })).sort((a, b) => b.intensity - a.intensity).slice(0, 5)
+    })).sort((a, b) => b.intensity - a.intensity)
   })
   
+  // Helper function to filter emotions by smart 20% threshold
+  const filterSignificantEmotions = (entry) => {
+    const emotions = [
+      { emotion: entry.emocion1, translated: entry.emocion1?.translated || entry.emocion1?.label },
+      { emotion: entry.emocion2, translated: entry.emocion2?.translated || entry.emocion2?.label },
+      { emotion: entry.emocion3, translated: entry.emocion3?.translated || entry.emocion3?.label }
+    ].filter(item => item.emotion?.score && item.translated)
+    
+    // Get emotions with score >= 20%
+    const highScoreEmotions = emotions.filter(item => (item.emotion.score * 100) >= 20)
+    
+    // If any emotion has >= 20%, return only those
+    if (highScoreEmotions.length > 0) {
+      return highScoreEmotions.map(item => item.translated)
+    }
+    
+    // Otherwise, return the highest scoring emotion (at least one must be shown)
+    if (emotions.length > 0) {
+      const highestScoring = emotions.reduce((prev, current) => 
+        (prev.emotion.score > current.emotion.score) ? prev : current
+      )
+      return [highestScoring.translated]
+    }
+    
+    return []
+  }
+
   const recentEntries = computed(() => {
     if (!entries.value || entries.value.length === 0) return []
     
@@ -186,11 +238,7 @@
       id: entry.id,
       time: formatDateTime(entry.timestamp_date).time,
       content: entry.trigger || 'Sin descripción',
-      emotions: [
-        entry.emocion1?.translated || entry.emocion1?.label,
-        entry.emocion2?.translated || entry.emocion2?.label,
-        entry.emocion3?.translated || entry.emocion3?.label
-      ].filter(Boolean),
+      emotions: filterSignificantEmotions(entry),
       moodColor: getMoodColor(entry.emocion1?.label)
     }))
   })
