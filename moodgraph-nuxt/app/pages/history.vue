@@ -90,31 +90,26 @@
     applyFilters()
   }, { deep: true })
 
-  // Helper function to filter emotions by smart 20% threshold
+  // Helper function to get all emotions from entry (same logic as analytics/dashboard)
   const getSignificantEmotions = (entry) => {
     const emotions = [
-      { emotion: entry.emocion1, translated: entry.emocion1?.translated || entry.emocion1?.label },
-      { emotion: entry.emocion2, translated: entry.emocion2?.translated || entry.emocion2?.label },
-      { emotion: entry.emocion3, translated: entry.emocion3?.translated || entry.emocion3?.label }
-    ].filter(item => item.emotion?.score && item.translated)
+      { emotion: entry.emocion1, label: entry.emocion1?.label },
+      { emotion: entry.emocion2, label: entry.emocion2?.label },
+      { emotion: entry.emocion3, label: entry.emocion3?.label }
+    ].filter(item => item.emotion?.score && item.label && item.label !== 'other')
     
-    // Get emotions with score >= 20%
-    const highScoreEmotions = emotions.filter(item => (item.emotion.score * 100) >= 20)
-    
-    // If any emotion has >= 20%, return only those
-    if (highScoreEmotions.length > 0) {
-      return highScoreEmotions.map(item => item.translated)
+    // Translate emotions to Spanish for display
+    const emotionTranslations = {
+      'joy': 'Alegría',
+      'sadness': 'Tristeza',
+      'anger': 'Enojo',
+      'fear': 'Miedo',
+      'surprise': 'Sorpresa',
+      'disgust': 'Disgusto'
     }
     
-    // Otherwise, return the highest scoring emotion (at least one must be shown)
-    if (emotions.length > 0) {
-      const highestScoring = emotions.reduce((prev, current) => 
-        (prev.emotion.score > current.emotion.score) ? prev : current
-      )
-      return [highestScoring.translated]
-    }
-    
-    return []
+    // Return all emotions (no threshold filtering)
+    return emotions.map(item => emotionTranslations[item.label.toLowerCase()] || item.label)
   }
 
   // Función para formatear fecha y hora desde timestamp
@@ -157,36 +152,17 @@
       })
     }
 
-    // Filtrar por emoción (usar smart 20% rule)
+    // Filtrar por emoción (same logic as analytics - check all emotions directly)
     if (selectedEmotionFilter.value !== 'all') {
       filtered = filtered.filter(entry => {
-        // Get emotions with score >= 20%
-        const highScoreEmotions = [
-          entry.emocion1?.score >= 0.2 ? entry.emocion1?.label?.toLowerCase() : null,
-          entry.emocion2?.score >= 0.2 ? entry.emocion2?.label?.toLowerCase() : null,
-          entry.emocion3?.score >= 0.2 ? entry.emocion3?.label?.toLowerCase() : null
-        ].filter(Boolean)
-        
-        // If any emotion has >= 20%, check only those
-        if (highScoreEmotions.length > 0) {
-          return highScoreEmotions.includes(selectedEmotionFilter.value)
-        }
-        
-        // Otherwise, check the highest scoring emotion
+        // Check all three emotions directly (no threshold)
         const emotions = [
-          { label: entry.emocion1?.label?.toLowerCase(), score: entry.emocion1?.score || 0 },
-          { label: entry.emocion2?.label?.toLowerCase(), score: entry.emocion2?.score || 0 },
-          { label: entry.emocion3?.label?.toLowerCase(), score: entry.emocion3?.score || 0 }
-        ].filter(item => item.label)
+          entry.emocion1?.label?.toLowerCase(),
+          entry.emocion2?.label?.toLowerCase(),
+          entry.emocion3?.label?.toLowerCase()
+        ].filter(emotion => emotion && emotion !== 'other')
         
-        if (emotions.length > 0) {
-          const highestScoring = emotions.reduce((prev, current) => 
-            (prev.score > current.score) ? prev : current
-          )
-          return highestScoring.label === selectedEmotionFilter.value
-        }
-        
-        return false
+        return emotions.includes(selectedEmotionFilter.value)
       })
     }
 
@@ -200,17 +176,13 @@
     applyFilters()
   }
 
-  // Función para determinar el color según la emoción principal
+  // Función para determinar el color según la emoción principal (same as dashboard/analytics)
   const getMoodColor = (emotion) => {
     const emotionColors = {
       'joy': 'bg-emerald-400',
-      'happiness': 'bg-emerald-400',
-      'contentment': 'bg-sage-400',
-      'calm': 'bg-sage-400',
       'sadness': 'bg-blue-400',
-      'anxiety': 'bg-orange-400',
-      'fear': 'bg-orange-400',
       'anger': 'bg-red-400',
+      'fear': 'bg-orange-400',
       'surprise': 'bg-purple-400',
       'disgust': 'bg-yellow-400'
     }
