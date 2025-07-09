@@ -61,17 +61,17 @@
               Emociones detectadas
             </h3>
             
-            <div v-if="modelInfo" class="text-sm text-gray-500">
+            <!-- <div v-if="modelInfo" class="text-sm text-gray-500">
               <span>Modelo: {{ modelInfo.name }}</span>
               <span class="mx-2">•</span>
               <span>{{ modelInfo.total_emotions_detected }} emociones analizadas</span>
-            </div>
+            </div> -->
           </div>
 
           <!-- Lista de emociones -->
           <div class="space-y-3 mb-6">
             <div 
-              v-for="(emotion, index) in analyzedEmotions" 
+              v-for="(emotion, index) in filteredEmotions" 
               :key="index"
               class="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
             >
@@ -228,6 +228,13 @@ const {
 const { triggerTypes } = useTriggerAnalysis()
 
 // Estado local
+
+// Filtrar emociones con al menos 20% de confianza (máximo 3)
+const filteredEmotions = computed(() => {
+  return analyzedEmotions.value
+    .filter(emotion => emotion.score >= 0.2) // Solo emociones con al menos 20% de confianza
+    .slice(0, 3) // Máximo 3 emociones
+})
 const entryText = ref('')
 const charCount = ref(0)
 const energyLevel = ref(5)
@@ -407,16 +414,30 @@ onMounted(() => {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #7c3aed;
+  background: #09b849;
   cursor: pointer;
+  margin-top: -8px; /* Centers the thumb on the track */
 }
 
 .slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #7c3aed;
+  background: #09b849;
   cursor: pointer;
   border: none;
+  transform: translateY(-50%);
+}
+/* Estilos para el track del slider */
+.slider::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #09b849, #09b849);
+  border-radius: 0.25rem;
+  height: 0.25rem;
+}
+
+.slider::-moz-range-track {
+  background: linear-gradient(to right, #09b849, #09b849);
+  border-radius: 0.25rem;
+  height: 0.25rem;
 }
 </style>

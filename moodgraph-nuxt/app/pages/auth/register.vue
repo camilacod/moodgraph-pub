@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+  <div class="min-h-screen bg-gradient-to-br from-green-300 via-green-500 to-green-700 flex items-center justify-center p-4">
     <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 w-full max-w-lg border border-white/20 shadow-2xl">
       <!-- Header -->
       <div class="text-center mb-8">
@@ -97,7 +97,7 @@
                   v-model="selectedConditions"
                   :value="condition"
                   type="checkbox"
-                  class="rounded border-white/30 bg-white/20 text-purple-600 focus:ring-white/50"
+                  class="rounded border-white/30 bg-white/20 text-green-600 focus:ring-white/50"
                 />
                 <span>{{ condition }}</span>
               </label>
@@ -114,7 +114,7 @@
         <button
           type="submit"
           :disabled="isLoading"
-          class="w-full bg-white text-purple-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full bg-white text-green-600 py-3 rounded-xl font-semibold hover:bg-white/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span v-if="!isLoading">Crear Cuenta</span>
           <span v-else class="flex items-center justify-center">

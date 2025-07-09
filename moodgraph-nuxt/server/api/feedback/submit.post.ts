@@ -3,7 +3,7 @@ import { serverSupabaseClient } from '#supabase/server'
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { entryId, rating, techniques } = body
+    const { entryId, rating, techniques, techniqueId, userId } = body
 
     if (!entryId || !rating) {
       throw createError({
@@ -21,8 +21,11 @@ export default defineEventHandler(async (event) => {
 
     const supabase = await serverSupabaseClient(event)
     
-    // Actualizar la entrada con el feedback
-    const { data, error } = await supabase
+    // Start a transaction-like approach
+    const updates = []
+    
+    // 1. Update mood entry with feedback
+    const { data: entryData, error: entryError } = await supabase
       .from('mood_entries')
       .update({
         feedback_rating: rating,
@@ -33,12 +36,53 @@ export default defineEventHandler(async (event) => {
       .select()
       .single()
 
-    if (error) {
-      console.error('❌ Error guardando feedback:', error)
+    if (entryError) {
+      console.error('❌ Error guardando feedback en mood_entries:', entryError)
       throw createError({
         statusCode: 500,
         statusMessage: 'Error al guardar el feedback'
       })
+    }
+
+    // 2. If we have a specific technique, update its score and save individual feedback
+    if (techniqueId && userId) {
+      // Save individual technique feedback
+      const { error: feedbackError } = await supabase
+        .from('user_technique_feedback')
+        .insert({
+          user_id: userId,
+          technique_id: techniqueId,
+          mood_entry_id: entryId,
+          rating: rating,
+          was_helpful: rating >= 3, // 3+ stars considered helpful
+          feedback_at: new Date().toISOString()
+        })
+
+      if (feedbackError) {
+        console.error('❌ Error guardando feedback individual:', feedbackError)
+        // Don't throw here, just log - the main feedback was saved
+      }
+
+      // Update technique score (increment by rating)
+      const { error: scoreError } = await supabase.rpc('increment_technique_score', {
+        technique_id: techniqueId,
+        score_increment: rating
+      })
+
+      if (scoreError) {
+        console.error('❌ Error actualizando score de técnica:', scoreError)
+        // Fallback: manual update
+        const { error: manualScoreError } = await supabase
+          .from('therapeutic_techniques')
+          .update({
+            score: supabase.raw('score + ?', [rating])
+          })
+          .eq('id', techniqueId)
+        
+        if (manualScoreError) {
+          console.error('❌ Error en fallback score update:', manualScoreError)
+        }
+      }
     }
 
     console.log('✅ Feedback guardado exitosamente')
@@ -48,7 +92,8 @@ export default defineEventHandler(async (event) => {
       data: {
         submitted_at: new Date().toISOString(),
         rating,
-        entry: data
+        entry: entryData,
+        techniqueUpdated: !!techniqueId
       }
     }
 
