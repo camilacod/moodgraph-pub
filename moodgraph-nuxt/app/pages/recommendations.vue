@@ -1,46 +1,114 @@
 <template>
-    <div class="space-y-8">
-      <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
-        <h3 class="text-lg font-semibold text-sage-800 mb-4">Recomendaciones Personalizadas</h3>
-        <p class="text-sage-600 mb-6">Basado en tus entradas recientes y experiencias de usuarios similares</p>
-        
-        <div class="space-y-4">
-          <div v-for="rec in recommendations" :key="rec.id" class="border border-sage-100 rounded-xl p-4">
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex items-center space-x-3">
-                <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${rec.iconBg}`">
-                  <Icon :name="rec.icon" :class="`w-5 h-5 ${rec.iconColor}`" />
-                </div>
-                <div>
-                  <h4 class="font-medium text-sage-800">{{ rec.title }}</h4>
-                  <p class="text-sm text-sage-600">{{ rec.category }}</p>
-                </div>
-              </div>
-              <div class="flex items-center space-x-1">
-                <Icon v-for="n in 5" :key="n" 
-                  :name="n <= rec.rating ? 'lucide:star' : 'lucide:star'" 
-                  :class="n <= rec.rating ? 'text-yellow-400 fill-current' : 'text-sage-300'" 
-                  class="w-4 h-4" />
-              </div>
-            </div>
-            <p class="text-sage-700 mb-3">{{ rec.description }}</p>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-sage-600">{{ rec.users }} usuarios encontraron esto útil</span>
-              <div class="flex space-x-2">
-                <button class="px-4 py-2 bg-sage-100 text-sage-700 rounded-lg hover:bg-sage-200 transition-colors text-sm">
-                  Probar Después
-                </button>
-                <button class="px-4 py-2 bg-gradient-to-r from-sage-500 to-lavender-500 text-white rounded-lg hover:shadow-lg transition-all duration-200 text-sm">
-                  Probar Ahora
-                </button>
-              </div>
-            </div>
+  <div class="space-y-8">
+    <!-- Header Section -->
+    <div class="bg-white rounded-2xl shadow-sm border border-sage-200 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-lg font-semibold text-sage-800">Recomendaciones Personalizadas</h3>
+          <p class="text-sage-600 mt-1">
+            {{ feedbackCount < 3 
+              ? 'Técnicas populares seleccionadas para ti' 
+              : 'Basado en tus preferencias y usuarios similares' 
+            }}
+          </p>
+        </div>
+        <div v-if="feedbackCount >= 0" class="text-right">
+          <p class="text-sm text-sage-600">Experiencia</p>
+          <p class="text-lg font-semibold text-sage-800">
+            {{ feedbackCount < 3 ? 'Nuevo usuario' : `${feedbackCount} técnicas probadas` }}
+          </p>
+        </div>
+      </div>
+      
+      <!-- User Info -->
+      <div v-if="profile" class="bg-sage-50 rounded-lg p-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 bg-gradient-to-r from-sage-500 to-lavender-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            {{ profile.name?.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <h4 class="font-medium text-sage-800">{{ profile.name }}</h4>
+            <p class="text-sm text-sage-600">
+              {{ getProfileSummary() }}
+            </p>
           </div>
         </div>
       </div>
     </div>
-  </template>
+
+    <!-- Recommendation Flow -->
+    <RecommendationFlow 
+      v-if="profile"
+      :user-profile="profile"
+      @feedback-submitted="handleFeedbackSubmitted"
+    />
+    
+    <!-- Loading state when no profile -->
+    <div v-else class="bg-white rounded-2xl shadow-sm border border-sage-200 p-12 text-center">
+      <Icon name="lucide:loader-2" class="w-12 h-12 text-sage-600 animate-spin mx-auto mb-4" />
+      <p class="text-sage-600">Cargando tu perfil...</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+// Proteger página con middleware de autenticación
+definePageMeta({
+  middleware: 'auth'
+})
+
+// Composables
+const { user, profile } = useAuth()
+const { getUserFeedbackCount } = useTherapeuticTechniques()
+
+// Estados reactivos
+const feedbackCount = ref(0)
+
+// Computed properties
+const getProfileSummary = () => {
+  if (!profile.value) return ''
   
-  <script setup>
-  const { recommendations } = useMockData()
-  </script>
+  const parts = []
+  if (profile.value.age) parts.push(`${profile.value.age} años`)
+  if (profile.value.psychological_conditions?.length > 0) {
+    parts.push(`${profile.value.psychological_conditions.length} condición(es)`)
+  }
+  
+  return parts.length > 0 ? parts.join(' • ') : 'Sin información adicional'
+}
+
+// Métodos
+const handleFeedbackSubmitted = async (data) => {
+  console.log('✅ Feedback recibido:', data)
+  
+  // Actualizar contador de feedback
+  if (user.value?.id) {
+    feedbackCount.value = await getUserFeedbackCount(user.value.id)
+  }
+}
+
+const loadUserStats = async () => {
+  if (user.value?.id) {
+    try {
+      feedbackCount.value = await getUserFeedbackCount(user.value.id)
+      console.log(`📊 Usuario tiene ${feedbackCount.value} técnicas con feedback`)
+    } catch (error) {
+      console.error('Error cargando estadísticas del usuario:', error)
+    }
+  }
+}
+
+// Cargar estadísticas al montar
+onMounted(async () => {
+  await loadUserStats()
+})
+
+// Watch para cargar stats cuando cambie el usuario
+watch(user, async (newUser) => {
+  if (newUser) {
+    await loadUserStats()
+  } else {
+    feedbackCount.value = 0
+  }
+}, { immediate: true })
+</script>

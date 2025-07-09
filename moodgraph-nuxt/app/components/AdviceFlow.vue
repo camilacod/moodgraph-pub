@@ -508,8 +508,8 @@
   // Cargar técnicas al iniciar
   onMounted(async () => {
     try {
-      // Cargar técnicas basadas en las emociones del mood entry
-      // Mapeo de emociones a inglés para el API
+      // Cargar técnicas basadas en las emociones del mood entry usando el sistema de recomendaciones personalizado
+      // Mapear emociones al formato correcto para el filtro
       const emotionMapping = {
         'alegría': 'joy',
         'tristeza': 'sadness', 
@@ -520,7 +520,7 @@
         'asco': 'disgust',
         'disgusto': 'disgust'
       }
-      
+
       const emotions = entryData.value.emotions
         .slice(0, 2) // Solo las 2 emociones principales
         .map(e => {
@@ -532,16 +532,15 @@
         })
         .filter(Boolean)
       
-      console.log('🎭 Emociones para técnicas:', emotions)
+      console.log('🎭 Emociones para técnicas personalizadas:', emotions)
       
       if (emotions.length > 0) {
-        const response = await $fetch('/api/techniques/recommend', {
-          method: 'POST',
-          body: { emotions }
-        })
+        // Usar el sistema de recomendaciones personalizado con filtro por emociones
+        const { getTechniquesByEmotions } = useTherapeuticTechniques()
+        const techniques = await getTechniquesByEmotions(emotions, props.userProfile)
         
-        recommendedTechniques.value = response.data.techniques || []
-        console.log('🔧 Técnicas encontradas:', recommendedTechniques.value.length)
+        recommendedTechniques.value = techniques || []
+        console.log('🔧 Técnicas personalizadas encontradas:', recommendedTechniques.value.length)
       }
     } catch (error) {
       console.error('Error cargando técnicas:', error)
