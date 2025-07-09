@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const body = await readBody(event)
-    const { entryData, userProfile, entryId } = body
+    const { entryData, userProfile, entryId, selectedTechnique } = body
 
     // Validaciones
     if (!entryData || !userProfile) {
@@ -32,18 +32,13 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // NUEVO: Obtener técnicas recomendadas ANTES de generar el consejo
-    let recommendedTechniques: any[] = []
+    // NUEVO: Usar técnica específica seleccionada o buscar recomendadas
+    let targetTechnique: any = null
     let mainEmotions: string[] = []
     
     try {
       console.log('🔍 Intentando conectar con Supabase...')
-      console.log('🔍 Funciones disponibles:', {
-        serverSupabaseClient: typeof serverSupabaseClient,
-        serverSupabaseServiceRole: typeof serverSupabaseServiceRole
-      })
       
-      // PROBAR AMBOS MÉTODOS:
       let supabase
       try {
         supabase = serverSupabaseServiceRole(event)
@@ -54,9 +49,6 @@ export default defineEventHandler(async (event) => {
         console.log('✅ Usando serverSupabaseClient')
       }
       
-      console.log('🔍 Cliente Supabase tipo:', typeof supabase)
-      console.log('🔍 Métodos disponibles:', Object.keys(supabase))
-      
       // Extraer emociones principales (top 2)
       mainEmotions = entryData.emotions
         .slice(0, 2) // Top 2 emociones más fuertes
@@ -64,54 +56,61 @@ export default defineEventHandler(async (event) => {
       
       console.log('🎯 Emociones principales detectadas:', mainEmotions)
       
-      // Buscar técnicas recomendadas basadas en las emociones
-      const { data: techniques, error: techniqueError } = await supabase
-        .from('therapeutic_techniques')
-        .select('*')
-        .overlaps('target_emotions', mainEmotions)
-        .eq('evidence_level', 'high') // Solo técnicas con alta evidencia
-        .lte('difficulty_level', 3) // Técnicas no muy complejas
-        .order('difficulty_level', { ascending: true })
-        .limit(3) // Máximo 3 técnicas
-
-      if (techniqueError) {
-        console.error('⚠️ Error obteniendo técnicas:', techniqueError)
+      // Si se seleccionó una técnica específica, usarla
+      if (selectedTechnique) {
+        targetTechnique = selectedTechnique
+        console.log('🎯 Usando técnica específica seleccionada:', selectedTechnique.name)
       } else {
-        recommendedTechniques = techniques || []
-        console.log(`💡 ${recommendedTechniques.length} técnicas encontradas para emociones:`, mainEmotions)
+        // Buscar técnicas recomendadas basadas en las emociones (fallback)
+        const { data: techniques, error: techniqueError } = await supabase
+          .from('therapeutic_techniques')
+          .select('*')
+          .overlaps('target_emotions', mainEmotions)
+          .eq('evidence_level', 'high')
+          .lte('difficulty_level', 3)
+          .order('difficulty_level', { ascending: true })
+          .limit(1) // Solo la primera técnica
+
+        if (techniqueError) {
+          console.error('⚠️ Error obteniendo técnicas:', techniqueError)
+        } else if (techniques && techniques.length > 0) {
+          targetTechnique = techniques[0]
+          console.log('💡 Técnica encontrada automáticamente:', targetTechnique.name)
+        }
       }
     } catch (techniquesFetchError) {
       console.error('⚠️ Error conectando con BD para técnicas:', techniquesFetchError)
-      // Continuar sin técnicas si hay error
     }
 
-    // NUEVO: Crear prompt enriquecido con técnicas específicas
-    let techniquesSection = ''
-    if (recommendedTechniques.length > 0) {
-      techniquesSection = `
+    // NUEVO: Crear prompt enriquecido con técnica específica
+    let techniqueSection = ''
+    if (targetTechnique) {
+      techniqueSection = `
 
-📋 TÉCNICAS TERAPÉUTICAS ESPECÍFICAS DISPONIBLES:
-${recommendedTechniques.map((t, index) => `
-${index + 1}. ${t.name} (${t.category.replace('_', ' ')})
-   Descripción: ${t.description}
-   Instrucciones: ${t.instructions.replace(/\n/g, ' ').substring(0, 200)}...
-   Nivel de evidencia: ${t.evidence_level}
-   Duración: ${t.duration_minutes} minutos
-`).join('')}`
+🎯 TÉCNICA TERAPÉUTICA ESPECÍFICA SELECCIONADA:
+Nombre: ${targetTechnique.name}
+Categoría: ${targetTechnique.category.replace('_', ' ')}
+Descripción: ${targetTechnique.description}
+Instrucciones detalladas: ${targetTechnique.instructions}
+Nivel de evidencia: ${targetTechnique.evidence_level}
+Duración estimada: ${targetTechnique.duration_minutes} minutos
+Nivel de dificultad: ${targetTechnique.difficulty_level}/5
+Emociones objetivo: ${targetTechnique.target_emotions.join(', ')}
+`
     }
 
-    // ACTUALIZADO: Prompt del sistema mejorado
-    const systemPrompt = `Eres un coach de bienestar mental especializado que combina empatía con técnicas terapéuticas basadas en evidencia científica. Tu objetivo es brindar consejos prácticos utilizando las técnicas específicas proporcionadas.
+    // ACTUALIZADO: Prompt del sistema mejorado para técnica específica
+    const systemPrompt = `Eres un coach de bienestar mental especializado que personaliza técnicas terapéuticas para situaciones específicas. Tu objetivo es adaptar la técnica seleccionada al contexto emocional y situación particular del usuario.
 
 DIRECTRICES PARA EL COACH IA:
-- Utiliza las técnicas terapéuticas específicas proporcionadas como base principal
-- Adapta las instrucciones de las técnicas al contexto emocional actual del usuario
-- Mantén un tono cálido, empático pero profesional como un coach personal
+- Adapta la técnica específica proporcionada al trigger y emociones del usuario
+- Explica cómo aplicar la técnica paso a paso para su situación particular
+- Conecta la técnica con su experiencia emocional actual
+- Mantén un tono cálido, empático pero profesional
 - Estructura tu respuesta de forma clara y accionable
-- Explica brevemente POR QUÉ estas técnicas son efectivas para su situación
+- Explica brevemente POR QUÉ esta técnica es efectiva para su situación específica
 - Personaliza el lenguaje según el perfil del usuario
-- Si no hay técnicas específicas, usa principios generales de CBT y mindfulness
-- Máximo 3-4 párrafos enfocados en la acción
+- Máximo 3-4 párrafos enfocados en la aplicación práctica
 - Si detectas crisis severa, recomienda ayuda profesional inmediata`
 
     // Construir información del usuario para contexto
@@ -129,26 +128,27 @@ DIRECTRICES PARA EL COACH IA:
       .map((emotion: any) => `${emotion.translated || emotion.label}: ${Math.round(emotion.score * 100)}%`)
       .join(', ')
 
-    // ACTUALIZADO: Prompt del usuario enriquecido con técnicas
+    // ACTUALIZADO: Prompt del usuario enriquecido con técnica específica
     const userPrompt = `CONTEXTO DEL USUARIO:
 Usuario${userContext.length > 0 ? ` (${userContext.join(', ')})` : ''} reporta:
 
 🎯 SITUACIÓN DESENCADENANTE: "${entryData.trigger}"
 🎭 EMOCIONES DETECTADAS: ${emotionsText}
 ⚡ NIVEL DE ENERGÍA: ${entryData.energyLevel}/10
-${techniquesSection}
+${techniqueSection}
 
 INSTRUCCIONES PARA EL COACH:
 Como coach personal especializado, proporciona un consejo personalizado que:
 1. Reconozca y valide las emociones actuales del usuario
-2. Utilice las técnicas específicas proporcionadas arriba adaptándolas a su situación
-3. Explique brevemente por qué estas técnicas son efectivas para su estado emocional actual
-4. Dé pasos claros y específicos que pueda seguir inmediatamente
-5. Sea alentador y empático en el tono
+2. Adapte la técnica específica proporcionada arriba a su situación particular
+3. Explique cómo aplicar cada paso de la técnica considerando su trigger específico
+4. Explique brevemente por qué esta técnica es efectiva para su estado emocional actual
+5. Dé pasos claros y específicos que pueda seguir inmediatamente
+6. Sea alentador y empático en el tono
 
-${recommendedTechniques.length > 0 ? 
-'IMPORTANTE: Basa tu consejo principalmente en las técnicas listadas arriba, adaptando sus instrucciones al contexto específico del usuario.' : 
-'IMPORTANTE: Como no hay técnicas específicas disponibles, usa principios generales de terapia cognitivo-conductual y mindfulness.'
+${targetTechnique ? 
+'IMPORTANTE: Basa tu consejo completamente en la técnica proporcionada arriba, adaptando sus instrucciones específicamente a la situación desencadenante y emociones del usuario.' : 
+'IMPORTANTE: Como no hay técnica específica disponible, usa principios generales de terapia cognitivo-conductual y mindfulness adaptados a su situación.'
 }`
 
     console.log('🤖 Generando consejo personalizado con técnicas específicas...')
@@ -188,7 +188,7 @@ ${recommendedTechniques.length > 0 ?
         .update({
           advice: advice,
           advice_generated_at: new Date().toISOString(),
-          recommended_techniques: recommendedTechniques.map(t => t.id) // NUEVO: Guardar IDs de técnicas
+          recommended_techniques: targetTechnique ? [targetTechnique.id] : [] // NUEVO: Guardar ID de técnica específica
         })
         .eq('id', entryId)
 
@@ -200,13 +200,12 @@ ${recommendedTechniques.length > 0 ?
       }
     }
 
-    // ACTUALIZADO: Retorna tanto el consejo como las técnicas recomendadas
+    // ACTUALIZADO: Retorna tanto el consejo como la técnica específica
     return {
       success: true,
       data: {
         advice: advice,
-        recommended_techniques: recommendedTechniques, // NUEVO: Incluir técnicas completas
-        techniques_count: recommendedTechniques.length,
+        target_technique: targetTechnique, // NUEVO: Técnica específica usada
         emotions_analyzed: mainEmotions,
         generated_at: new Date().toISOString()
       }
