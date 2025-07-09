@@ -55,14 +55,8 @@
                 </div>
               </div>
               <div class="flex space-x-1">
-                <span class="px-2 py-1 bg-sage-100 text-sage-700 text-xs rounded-full">
-                  {{ entry.emocion1.translated || entry.emocion1.label }}
-                </span>
-                <span class="px-2 py-1 bg-sage-100 text-sage-700 text-xs rounded-full">
-                  {{ entry.emocion2.translated || entry.emocion2.label }}
-                </span>
-                <span class="px-2 py-1 bg-sage-100 text-sage-700 text-xs rounded-full">
-                  {{ entry.emocion3.translated || entry.emocion3.label }}
+                <span v-for="emotion in getSignificantEmotions(entry)" :key="emotion" class="px-2 py-1 bg-sage-100 text-sage-700 text-xs rounded-full">
+                  {{ emotion }}
                 </span>
               </div>
             </div>
@@ -95,6 +89,33 @@
   watch(entries, () => {
     applyFilters()
   }, { deep: true })
+
+  // Helper function to filter emotions by smart 20% threshold
+  const getSignificantEmotions = (entry) => {
+    const emotions = [
+      { emotion: entry.emocion1, translated: entry.emocion1?.translated || entry.emocion1?.label },
+      { emotion: entry.emocion2, translated: entry.emocion2?.translated || entry.emocion2?.label },
+      { emotion: entry.emocion3, translated: entry.emocion3?.translated || entry.emocion3?.label }
+    ].filter(item => item.emotion?.score && item.translated)
+    
+    // Get emotions with score >= 20%
+    const highScoreEmotions = emotions.filter(item => (item.emotion.score * 100) >= 20)
+    
+    // If any emotion has >= 20%, return only those
+    if (highScoreEmotions.length > 0) {
+      return highScoreEmotions.map(item => item.translated)
+    }
+    
+    // Otherwise, return the highest scoring emotion (at least one must be shown)
+    if (emotions.length > 0) {
+      const highestScoring = emotions.reduce((prev, current) => 
+        (prev.emotion.score > current.emotion.score) ? prev : current
+      )
+      return [highestScoring.translated]
+    }
+    
+    return []
+  }
 
   // Función para formatear fecha y hora desde timestamp
   const formatDateTime = (timestamp) => {
@@ -136,15 +157,36 @@
       })
     }
 
-    // Filtrar por emoción
+    // Filtrar por emoción (usar smart 20% rule)
     if (selectedEmotionFilter.value !== 'all') {
       filtered = filtered.filter(entry => {
+        // Get emotions with score >= 20%
+        const highScoreEmotions = [
+          entry.emocion1?.score >= 0.2 ? entry.emocion1?.label?.toLowerCase() : null,
+          entry.emocion2?.score >= 0.2 ? entry.emocion2?.label?.toLowerCase() : null,
+          entry.emocion3?.score >= 0.2 ? entry.emocion3?.label?.toLowerCase() : null
+        ].filter(Boolean)
+        
+        // If any emotion has >= 20%, check only those
+        if (highScoreEmotions.length > 0) {
+          return highScoreEmotions.includes(selectedEmotionFilter.value)
+        }
+        
+        // Otherwise, check the highest scoring emotion
         const emotions = [
-          entry.emocion1?.label?.toLowerCase(),
-          entry.emocion2?.label?.toLowerCase(),
-          entry.emocion3?.label?.toLowerCase()
-        ]
-        return emotions.includes(selectedEmotionFilter.value)
+          { label: entry.emocion1?.label?.toLowerCase(), score: entry.emocion1?.score || 0 },
+          { label: entry.emocion2?.label?.toLowerCase(), score: entry.emocion2?.score || 0 },
+          { label: entry.emocion3?.label?.toLowerCase(), score: entry.emocion3?.score || 0 }
+        ].filter(item => item.label)
+        
+        if (emotions.length > 0) {
+          const highestScoring = emotions.reduce((prev, current) => 
+            (prev.score > current.score) ? prev : current
+          )
+          return highestScoring.label === selectedEmotionFilter.value
+        }
+        
+        return false
       })
     }
 

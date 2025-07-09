@@ -313,10 +313,8 @@
   const submittingFeedback = ref(false)
   
   // Preparar datos de entrada para el formato esperado por el API
-  const entryData = computed(() => ({
-    trigger: props.moodEntry.trigger,
-    energyLevel: props.moodEntry.level,
-    emotions: [
+  const entryData = computed(() => {
+    const allEmotions = [
       { 
         label: props.moodEntry.emocion1?.label, 
         score: props.moodEntry.emocion1?.score, 
@@ -332,8 +330,38 @@
         score: props.moodEntry.emocion3?.score, 
         translated: props.moodEntry.emocion3?.translated 
       }
-    ].filter(e => e.label) // Filtrar emociones vacías
-  }))
+    ].filter(e => e.label && e.score)
+    
+    // Get emotions with score >= 20%
+    const highScoreEmotions = allEmotions.filter(e => e.score >= 0.2)
+    
+    // If any emotion has >= 20%, return only those
+    if (highScoreEmotions.length > 0) {
+      return {
+        trigger: props.moodEntry.trigger,
+        energyLevel: props.moodEntry.level,
+        emotions: highScoreEmotions
+      }
+    }
+    
+    // Otherwise, return the highest scoring emotion (at least one must be shown)
+    if (allEmotions.length > 0) {
+      const highestScoring = allEmotions.reduce((prev, current) => 
+        (prev.score > current.score) ? prev : current
+      )
+      return {
+        trigger: props.moodEntry.trigger,
+        energyLevel: props.moodEntry.level,
+        emotions: [highestScoring]
+      }
+    }
+    
+    return {
+      trigger: props.moodEntry.trigger,
+      energyLevel: props.moodEntry.level,
+      emotions: []
+    }
+  })
   
   // Computed properties
   const techniqueSteps = computed(() => {

@@ -229,11 +229,24 @@ const { triggerTypes } = useTriggerAnalysis()
 
 // Estado local
 
-// Filtrar emociones con al menos 20% de confianza (máximo 3)
+// Filtrar emociones con smart 20% rule (máximo 3)
 const filteredEmotions = computed(() => {
-  return analyzedEmotions.value
-    .filter(emotion => emotion.score >= 0.2) // Solo emociones con al menos 20% de confianza
-    .slice(0, 3) // Máximo 3 emociones
+  if (analyzedEmotions.value.length === 0) return []
+  
+  // Get emotions with score >= 20%
+  const highScoreEmotions = analyzedEmotions.value.filter(emotion => emotion.score >= 0.2)
+  
+  // If any emotion has >= 20%, return only those (max 3)
+  if (highScoreEmotions.length > 0) {
+    return highScoreEmotions.slice(0, 3)
+  }
+  
+  // Otherwise, return the highest scoring emotion (at least one must be shown)
+  const highestScoring = analyzedEmotions.value.reduce((prev, current) => 
+    (prev.score > current.score) ? prev : current
+  )
+  
+  return [highestScoring]
 })
 const entryText = ref('')
 const charCount = ref(0)
